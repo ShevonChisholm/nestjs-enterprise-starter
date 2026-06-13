@@ -1,6 +1,6 @@
 # NestJS Enterprise Starter
 
-A production-ready NestJS starter demonstrating configuration management, request validation, PostgreSQL integration, JWT authentication, health checks, and a scalable backend foundation. Future phases will add RBAC, Swagger, logging, testing, Docker, and CI/CD.
+A production-ready NestJS starter demonstrating configuration management, request validation, PostgreSQL integration, JWT authentication, permission-based RBAC, health checks, and a scalable backend foundation. Future phases will add Swagger, logging, testing, Docker, and CI/CD.
 
 ## Phase 1: Configuration Foundation
 
@@ -181,6 +181,72 @@ Logout response:
 }
 ```
 
+## Phase 3B: RBAC Foundation
+
+Phase 3B adds database-backed role-based access control with permissions as the primary enforcement mechanism.
+
+Roles group permissions for administration, while routes declare the precise permissions they require. This keeps authorization policies explicit and avoids coupling business endpoints to broad role names.
+
+### Roles And Permissions
+
+Seeded roles:
+
+- `SUPER_ADMIN`: all permissions
+- `ADMIN`: `users:create`, `users:read`, `users:update`, `roles:read`, and `permissions:read`
+- `USER`: no administrative permissions by default
+
+Seeded permissions:
+
+```txt
+users:create
+users:read
+users:update
+users:delete
+roles:create
+roles:read
+roles:update
+roles:delete
+permissions:read
+```
+
+The Prisma schema uses `Role`, `Permission`, `UserRole`, and `RolePermission` models. The join models make user-role and role-permission assignment explicit and prevent duplicate relationships.
+
+Apply the RBAC migration and seed its fixed authorization data:
+
+```bash
+npx prisma migrate dev --name add_rbac_models
+npx prisma db seed
+```
+
+The seed is idempotent: it creates or restores the fixed roles and permissions, then reconciles their mappings. It intentionally does not create a privileged user.
+
+### Protected Users Route
+
+`GET /users` requires a valid access token and the current `users:read` permission:
+
+```bash
+curl http://localhost:3000/users \
+  -H "Authorization: Bearer <access-token>"
+```
+
+The endpoint returns safe user DTOs only. Password and refresh-token hashes are never included.
+
+### Assign A Role Locally
+
+Open Prisma Studio:
+
+```bash
+npx prisma studio
+```
+
+To grant a local user access:
+
+1. Find the target user and the desired seeded role.
+2. Create a `UserRole` record using their `userId` and `roleId`.
+3. Call the protected route again with the same valid access token.
+
+Because permissions are resolved from PostgreSQL for each authorized request, the role change takes effect immediately without logging in again or refreshing the JWT.
+
 ## Environment Setup
 
 Copy the example environment file and replace placeholder secrets with secure values:
@@ -266,6 +332,14 @@ Passport strategies validate JWT signatures and reject deleted users before requ
 
 Argon2id is used for password hashing because it is a memory-hard algorithm designed to resist credential-cracking attacks. Refresh tokens are also stored only as Argon2id hashes, so leaked database records cannot be used directly as active credentials.
 
+### RBAC Boundaries
+
+`@Permissions()` and `@Roles()` attach authorization requirements as NestJS metadata. `PermissionsGuard` requires every declared permission, while `RolesGuard` allows access when the user has at least one declared role. Routes without the corresponding metadata are unaffected by each guard.
+
+`RbacService` centralizes role and permission queries and ignores soft-deleted roles and permissions. Permission-protected routes resolve current access from the database instead of embedding authorization state in JWT payloads, so revocations and grants apply without waiting for token expiry.
+
+The JWT principal contains only the authenticated user ID and email. Authentication proves identity; the RBAC layer independently resolves what that identity may do.
+
 ### Future Phases
 
-The configuration, validation, database, and authentication boundaries established in Phases 1 through 3A prepare the project for RBAC and future business modules without coupling those concerns to infrastructure setup.
+The configuration, validation, database, authentication, and authorization boundaries established in Phases 1 through 3B prepare the project for future business modules without coupling those concerns to infrastructure setup.

@@ -32,13 +32,13 @@ export class AuthController {
   refresh(
     @CurrentUser() user: RefreshAuthenticatedUser,
   ): Promise<TokenResponseDto> {
-    return this.authService.refresh(user.userId, user.refreshToken);
+    return this.authService.refresh(user.id, user.refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@CurrentUser() user: AuthenticatedUser): Promise<{ message: string }> {
-    return this.authService.logout(user.userId);
+    return this.authService.logout(user.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -46,6 +46,6 @@ export class AuthController {
   getCurrentUser(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<UserResponseDto> {
-    return this.authService.getCurrentUser(user.userId);
+    return this.authService.getCurrentUser(user.id);
   }
 }

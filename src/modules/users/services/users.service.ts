@@ -20,6 +20,15 @@ export class UsersService {
     });
   }
 
+  async findAll(): Promise<UserResponseDto[]> {
+    const users = await this.prismaService.user.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return users.map((user) => this.toResponse(user));
+  }
+
   create(data: Prisma.UserCreateInput): Promise<User> {
     return this.prismaService.user.create({ data });
   }

@@ -8,6 +8,8 @@ import { environmentValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { RbacModule } from './modules/rbac/rbac.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { HealthModule } from './modules/health/health.module';
     }),
     DatabaseModule,
     AuthModule,
+    RbacModule,
+    UsersModule,
     HealthModule,
   ],
   controllers: [AppController],
