@@ -1,98 +1,90 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Enterprise Starter
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-ready NestJS starter demonstrating configuration management, request validation, health checks, and a scalable backend foundation. Future phases will add PostgreSQL, Prisma, authentication, RBAC, Swagger, logging, testing, Docker, and CI/CD.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Phase 1: Configuration Foundation
 
-## Description
+Phase 1 establishes the runtime and structural foundation needed for future enterprise features while keeping the application intentionally small.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Implemented Features
 
-## Project setup
+- Global, reusable configuration powered by `@nestjs/config`
+- Joi-based environment validation with startup fail-fast behavior
+- Typed, namespaced application configuration
+- Global request validation with secure input handling defaults
+- Modular health check endpoint
+- Scalable feature-first project structure
+
+## Environment Setup
+
+Copy the example environment file and replace placeholder secrets with secure values:
 
 ```bash
-$ npm install
+cp .env.example .env
 ```
 
-## Compile and run the project
+On PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The application requires the following runtime configuration:
+
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `NODE_ENV` | Yes | None | Current runtime environment |
+| `PORT` | No | `3000` | HTTP server port |
+| `DATABASE_URL` | Yes | None | Reserved for the future database phase |
+| `JWT_SECRET` | Yes | None | Reserved for the future authentication phase |
+| `JWT_EXPIRES_IN` | No | `15m` | Future access-token lifetime |
+| `JWT_REFRESH_SECRET` | Yes | None | Reserved for future refresh tokens |
+| `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Future refresh-token lifetime |
+
+## Run The Project
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
+npm run start:dev
 ```
 
-## Run tests
+The API is available at `http://localhost:3000` by default.
 
-```bash
-# unit tests
-$ npm run test
+## Health Check
 
-# e2e tests
-$ npm run test:e2e
+Use the health endpoint to confirm that the API process is available and running in the expected environment:
 
-# test coverage
-$ npm run test:cov
+```http
+GET /health
 ```
 
-## Deployment
+Example response:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```json
+{
+  "status": "ok",
+  "environment": "development"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Architecture Notes
 
-## Resources
+### Configuration Foundation
 
-Check out a few resources that may come in handy when working with NestJS:
+Configuration is centralized under `src/config` and loaded globally so feature modules can consume one consistent runtime contract. Application-level values are namespaced and typed to make reuse explicit and reduce direct access to `process.env`.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Environment Validation
 
-## Support
+Joi validates environment variables before the NestJS application finishes bootstrapping. The API fails fast when required values are missing or invalid, preventing incomplete or unsafe deployments from accepting traffic.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Request Validation
 
-## Stay in touch
+A global `ValidationPipe` strips unknown properties, rejects non-whitelisted input, and transforms request data into DTO-compatible types. This creates a consistent validation boundary for the feature modules added in later phases.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Health Check Purpose
 
-## License
+The lightweight `/health` endpoint provides an availability signal for developers, deployment platforms, load balancers, and monitoring systems without depending on database or authentication infrastructure.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Future Phases
+
+This phase provides the configuration, validation, and module boundaries that future PostgreSQL, Prisma, authentication, and RBAC features will build upon. Those concerns are intentionally excluded from Phase 1.
