@@ -1,6 +1,6 @@
 # NestJS Enterprise Starter
 
-A production-ready NestJS starter demonstrating configuration management, request validation, PostgreSQL integration, health checks, and a scalable backend foundation. Future phases will add authentication, RBAC, Swagger, logging, testing, Docker, and CI/CD.
+A production-ready NestJS starter demonstrating configuration management, request validation, PostgreSQL integration, JWT authentication, health checks, and a scalable backend foundation. Future phases will add RBAC, Swagger, logging, testing, Docker, and CI/CD.
 
 ## Phase 1: Configuration Foundation
 
@@ -55,6 +55,132 @@ Open Prisma Studio to inspect local data:
 npx prisma studio
 ```
 
+## Phase 3A: Authentication Foundation
+
+Phase 3A adds a production-style JWT authentication boundary with:
+
+- User registration and login
+- Short-lived access tokens
+- Rotating refresh tokens
+- Logout and current-user endpoints
+- Argon2id password and refresh-token hashing
+- Passport JWT strategies and route guards
+- Validated request DTOs and safe user response DTOs
+
+### Authentication Endpoints
+
+| Method | Endpoint | Authentication | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/auth/register` | Public | Create an account and issue tokens |
+| `POST` | `/auth/login` | Public | Verify credentials and issue tokens |
+| `POST` | `/auth/refresh` | Refresh bearer token | Rotate the refresh token and issue a new token pair |
+| `POST` | `/auth/logout` | Access bearer token | Revoke the stored refresh credential |
+| `GET` | `/auth/me` | Access bearer token | Return the current safe user profile |
+
+Apply the authentication schema migration and regenerate Prisma Client:
+
+```bash
+npx prisma migrate dev --name add_auth_fields_to_user
+npx prisma generate
+```
+
+### Register
+
+```http
+POST /auth/register
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123!",
+  "firstName": "Shevon",
+  "lastName": "Chisholm"
+}
+```
+
+Registration and login return a safe user profile and token pair:
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "firstName": "Shevon",
+    "lastName": "Chisholm",
+    "createdAt": "date",
+    "updatedAt": "date"
+  },
+  "tokens": {
+    "accessToken": "jwt",
+    "refreshToken": "jwt"
+  }
+}
+```
+
+### Login
+
+```http
+POST /auth/login
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123!"
+}
+```
+
+### Protected Routes And Rotation
+
+Send the access token as a bearer token when requesting the current user or logging out:
+
+```bash
+curl http://localhost:3000/auth/me \
+  -H "Authorization: Bearer <access-token>"
+```
+
+Send the refresh token as a bearer token to rotate it:
+
+```bash
+curl -X POST http://localhost:3000/auth/refresh \
+  -H "Authorization: Bearer <refresh-token>"
+```
+
+Each successful refresh returns a new access token and refresh token. The previous refresh token no longer matches the stored hash and cannot be reused.
+
+Refresh response:
+
+```json
+{
+  "accessToken": "jwt",
+  "refreshToken": "jwt"
+}
+```
+
+Current-user response:
+
+```json
+{
+  "id": "uuid",
+  "email": "user@example.com",
+  "firstName": "Shevon",
+  "lastName": "Chisholm",
+  "createdAt": "date",
+  "updatedAt": "date"
+}
+```
+
+Logout response:
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
 ## Environment Setup
 
 Copy the example environment file and replace placeholder secrets with secure values:
@@ -76,10 +202,10 @@ The application requires the following runtime configuration:
 | `NODE_ENV` | Yes | None | Current runtime environment |
 | `PORT` | No | `3000` | HTTP server port |
 | `DATABASE_URL` | Yes | None | PostgreSQL connection string used by Prisma |
-| `JWT_SECRET` | Yes | None | Reserved for the future authentication phase |
-| `JWT_EXPIRES_IN` | No | `15m` | Future access-token lifetime |
-| `JWT_REFRESH_SECRET` | Yes | None | Reserved for future refresh tokens |
-| `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Future refresh-token lifetime |
+| `JWT_SECRET` | Yes | None | Access-token signing secret |
+| `JWT_EXPIRES_IN` | No | `15m` | Access-token lifetime |
+| `JWT_REFRESH_SECRET` | Yes | None | Refresh-token signing secret |
+| `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Refresh-token lifetime |
 
 ## Run The Project
 
@@ -132,6 +258,14 @@ The `/health` endpoint provides an availability signal for developers, deploymen
 
 Prisma is wrapped in a reusable NestJS `DatabaseModule` and `PrismaService` instead of being instantiated inside feature modules. This centralizes connection lifecycle management, gives modules one consistent database client, and provides a safe connectivity helper for operational health checks.
 
+### Authentication Boundaries
+
+`UsersService` owns user persistence and explicitly maps Prisma records to safe response DTOs, preventing password and refresh-token hashes from reaching API responses. `AuthService` owns credential verification, token generation, rotation, and logout.
+
+Passport strategies validate JWT signatures and reject deleted users before requests reach protected controllers. Guards apply the appropriate access-token or refresh-token strategy to each route, while DTOs and the global validation pipe enforce public request contracts.
+
+Argon2id is used for password hashing because it is a memory-hard algorithm designed to resist credential-cracking attacks. Refresh tokens are also stored only as Argon2id hashes, so leaked database records cannot be used directly as active credentials.
+
 ### Future Phases
 
-The configuration, validation, and database boundaries established in Phases 1 and 2 prepare the project for authentication, RBAC, and future business modules without coupling those concerns to infrastructure setup.
+The configuration, validation, database, and authentication boundaries established in Phases 1 through 3A prepare the project for RBAC and future business modules without coupling those concerns to infrastructure setup.

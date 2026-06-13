@@ -6,6 +6,7 @@ import { appConfig } from './config/app.config';
 import { configuration } from './config/configuration';
 import { environmentValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { HealthModule } from './modules/health/health.module';
       },
     }),
     DatabaseModule,
+    AuthModule,
     HealthModule,
   ],
   controllers: [AppController],
