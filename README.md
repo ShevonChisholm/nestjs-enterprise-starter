@@ -1,6 +1,6 @@
 # NestJS Enterprise Starter
 
-A production-ready NestJS starter demonstrating configuration management, request validation, health checks, and a scalable backend foundation. Future phases will add PostgreSQL, Prisma, authentication, RBAC, Swagger, logging, testing, Docker, and CI/CD.
+A production-ready NestJS starter demonstrating configuration management, request validation, PostgreSQL integration, health checks, and a scalable backend foundation. Future phases will add authentication, RBAC, Swagger, logging, testing, Docker, and CI/CD.
 
 ## Phase 1: Configuration Foundation
 
@@ -14,6 +14,46 @@ Phase 1 establishes the runtime and structural foundation needed for future ente
 - Global request validation with secure input handling defaults
 - Modular health check endpoint
 - Scalable feature-first project structure
+
+## Phase 2: PostgreSQL + Prisma Foundation
+
+Phase 2 adds the persistence foundation used by future business modules:
+
+- PostgreSQL datasource configuration
+- Prisma schema and generated client
+- Initial `User` model with a reusable audit-field pattern
+- Centralized database lifecycle management through `DatabaseModule` and `PrismaService`
+- Database-aware health checks with safe failure responses
+
+### PostgreSQL Requirement
+
+PostgreSQL must be running and the configured database must exist before applying migrations. The default local connection string is:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nestjs_enterprise_starter
+```
+
+Create the database and update the credentials in `.env` when your local PostgreSQL setup differs.
+
+### Prisma Setup
+
+Apply the initial schema during development:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+Generate Prisma Client after schema changes:
+
+```bash
+npx prisma generate
+```
+
+Open Prisma Studio to inspect local data:
+
+```bash
+npx prisma studio
+```
 
 ## Environment Setup
 
@@ -35,7 +75,7 @@ The application requires the following runtime configuration:
 | --- | --- | --- | --- |
 | `NODE_ENV` | Yes | None | Current runtime environment |
 | `PORT` | No | `3000` | HTTP server port |
-| `DATABASE_URL` | Yes | None | Reserved for the future database phase |
+| `DATABASE_URL` | Yes | None | PostgreSQL connection string used by Prisma |
 | `JWT_SECRET` | Yes | None | Reserved for the future authentication phase |
 | `JWT_EXPIRES_IN` | No | `15m` | Future access-token lifetime |
 | `JWT_REFRESH_SECRET` | Yes | None | Reserved for future refresh tokens |
@@ -63,9 +103,12 @@ Example response:
 ```json
 {
   "status": "ok",
-  "environment": "development"
+  "environment": "development",
+  "database": "connected"
 }
 ```
+
+When PostgreSQL is unavailable, the endpoint returns HTTP `503 Service Unavailable` with `database` set to `disconnected`.
 
 ## Architecture Notes
 
@@ -83,8 +126,12 @@ A global `ValidationPipe` strips unknown properties, rejects non-whitelisted inp
 
 ### Health Check Purpose
 
-The lightweight `/health` endpoint provides an availability signal for developers, deployment platforms, load balancers, and monitoring systems without depending on database or authentication infrastructure.
+The `/health` endpoint provides an availability signal for developers, deployment platforms, load balancers, and monitoring systems. It runs a minimal database query so consumers can distinguish a healthy API from one whose essential PostgreSQL dependency is unavailable.
+
+### Database Foundation
+
+Prisma is wrapped in a reusable NestJS `DatabaseModule` and `PrismaService` instead of being instantiated inside feature modules. This centralizes connection lifecycle management, gives modules one consistent database client, and provides a safe connectivity helper for operational health checks.
 
 ### Future Phases
 
-This phase provides the configuration, validation, and module boundaries that future PostgreSQL, Prisma, authentication, and RBAC features will build upon. Those concerns are intentionally excluded from Phase 1.
+The configuration, validation, and database boundaries established in Phases 1 and 2 prepare the project for authentication, RBAC, and future business modules without coupling those concerns to infrastructure setup.

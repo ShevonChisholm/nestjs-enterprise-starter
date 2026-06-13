@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
 import { configuration } from './config/configuration';
 import { environmentValidationSchema } from './config/env.validation';
+import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { HealthModule } from './modules/health/health.module';
         allowUnknown: true,
       },
     }),
+    DatabaseModule,
     HealthModule,
   ],
   controllers: [AppController],
